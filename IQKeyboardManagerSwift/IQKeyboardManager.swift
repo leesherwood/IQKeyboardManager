@@ -176,6 +176,11 @@ open class IQKeyboardManager: NSObject, UIGestureRecognizerDelegate {
         return Static.kbManager
     }
     
+    ///----------------------------------
+    /// MARK: Ignore UIScrollView Classes
+    ///----------------------------------
+    open var ignoreUIScrollViewObjects: Set<String> = []
+    
     ///-------------------------
     /// MARK: IQToolbar handling
     ///-------------------------
@@ -927,6 +932,25 @@ open class IQKeyboardManager: NSObject, UIGestureRecognizerDelegate {
             showLog("You must set UIWindow.rootViewController in your AppDelegate to work with IQKeyboardManager")
         }
     }
+    
+    /* Set the ignored objects using an array of objects [for convenience] */
+    open func setIgnoredScrollViewObjects(_ objs: [AnyObject]) {
+        for obj in objs {
+            if let str = String(describing: type(of: obj)).components(separatedBy: ".").last {
+                ignoreUIScrollViewObjects.insert(str)
+            }
+        }
+    }
+    
+    /* Test if a given object should be excluded from the textfield superview tests */
+    fileprivate func isIgnoredScrollViewObject(_ obj: AnyObject) -> Bool {
+        
+        guard let str = String(describing: type(of: obj)).components(separatedBy: ".").last else {
+            return false
+        }
+        
+        return ignoreUIScrollViewObjects.contains(str)
+    }
 
     /* Adjusting RootViewController's frame according to interface orientation. */
     fileprivate func adjustFrame() {
@@ -1034,7 +1058,7 @@ open class IQKeyboardManager: NSObject, UIGestureRecognizerDelegate {
         //Getting UIScrollView whose scrolling is enabled.    //  (Bug ID: #285)
         while let view = superView {
             
-            if (view.isScrollEnabled) {
+            if (view.isScrollEnabled && !isIgnoredScrollViewObject(view)) {
                 superScrollView = view
                 break
             }
